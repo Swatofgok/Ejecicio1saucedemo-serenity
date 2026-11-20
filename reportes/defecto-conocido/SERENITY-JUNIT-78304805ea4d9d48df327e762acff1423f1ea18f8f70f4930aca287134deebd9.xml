@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><testsuite errors="0" failures="1" name="Flujo de compra de punta a punta en SauceDemo" skipped="0" tests="1" time="8.69" timestamp="2026-11-19 10:26:01"><testcase name="El resumen muestra el item total con dos decimales exactos"><failure message="&#13;&#10;Expected: &quot;57.98&quot;&#13;&#10;     but: was &quot;57.980000000000004&quot;" type="java.lang.AssertionError">&#13;
+Expected: "57.98"&#13;
+     but: was "57.980000000000004"</failure><system-err>&#13;
+Expected: "57.98"&#13;
+     but: was "57.980000000000004"&#13;
+com.saucedemo.stepdefinitions.PurchaseStepDefinitions.itemTotalIsShownExactly(PurchaseStepDefinitions.java:101)&#13;
+</system-err></testcase></testsuite>
