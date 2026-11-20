@@ -1,0 +1,21 @@
+# Build y reportes generados (los reportes de entrega se versionan en reportes/)
+target/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+
+# Configuración local de Claude Code
+.claude/settings.local.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
