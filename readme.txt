@@ -39,8 +39,8 @@ La prueba es DINAMICA y REPRODUCIBLE:
 ----------------------------
 Paso 1. Clonar el repositorio y entrar a la carpeta:
 
-          git clone <URL_DEL_REPOSITORIO>
-          cd saucedemo-serenity
+          git clone https://github.com/Swatofgok/Ejecicio1saucedemo-serenity.git
+          cd Ejecicio1saucedemo-serenity
 
 Paso 2. Ejecutar las pruebas y generar el reporte:
 
