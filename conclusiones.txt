@@ -1,0 +1,94 @@
+CONCLUSIONES Y HALLAZGOS - PRUEBA E2E SAUCEDEMO
+===============================================
+
+1. ALCANCE CUBIERTO
+-------------------
+Se automatizo el flujo completo de compra: login con standard_user, seleccion de
+productos, visualizacion del carrito, formulario de checkout, resumen y
+confirmacion final "THANK YOU FOR YOUR ORDER".
+
+2. DECISIONES DE DISENO
+-----------------------
+- Serenity BDD + Cucumber (Gherkin en espanol) + JUnit 5 + Selenium. Los
+  escenarios son legibles por perfiles no tecnicos y el reporte de Serenity
+  documenta cada paso con capturas.
+- Patron Screenplay: un actor "Comprador" ejecuta tasks de negocio (Login,
+  AddRandomProductsToCart, ...) y valida con questions (CartBadgeCount,
+  OrderSummary, ...). Los selectores viven solo en userinterfaces, los step
+  definitions solo orquestan y el reporte se lee como una historia del usuario.
+  El estado entre pasos (productos elegidos) se guarda en la memoria del actor.
+- Prueba dinamica y reproducible:
+    * Productos elegidos al azar desde el inventario leido en vivo.
+    * Cantidad parametrizable con Esquema del escenario (2, 1 y 3 productos).
+    * Datos del comprador generados aleatoriamente en cada corrida.
+    * Todo el azar sale de una semilla publicada en el reporte; con
+      -Dseed=<n> se repite exactamente la misma corrida para depurar un fallo.
+  Esto evita depender de nombres o precios fijos y detecta regresiones que una
+  prueba con datos estaticos podria no ver, sin perder reproducibilidad.
+- HALLAZGO (defecto del sitio, detectado gracias a la seleccion aleatoria):
+  con ciertas combinaciones de productos (por ejemplo una suma de 57.98) el
+  resumen de compra muestra el "Item total" sin redondear, como
+  "$57.980000000000004", por un error de punto flotante. Una ejecucion con otra
+  combinacion de productos paso sin problemas, por lo que el defecto depende de
+  los productos elegidos. La prueba redondea a 2 decimales para comparar (lo
+  que veria el usuario) y, cuando ocurre, deja la evidencia en el reporte de
+  Serenity ("Defecto del sitio: item total sin redondear") ademas del log.
+  Como el requisito es mostrar el valor exacto, existe ademas un escenario fijo
+  @defecto-conocido (Fleece Jacket + Onesie) que exige "57.98" y falla con
+  "57.980000000000004" mientras el sitio no se corrija. Se excluye de la corrida
+  normal para que la suite principal siga siendo confiable, y se ejecuta con
+  -Dcucumber.filter.tags="@defecto-conocido". Simulando la suma del sitio, 6 de
+  las 63 combinaciones posibles de productos producen el defecto.
+- Validaciones de negocio adicionales a las pedidas: el contador del carrito,
+  que el carrito contenga exactamente lo seleccionado, y que el total sea
+  igual a suma de productos mas impuestos (BigDecimal, sin errores de
+  redondeo con decimales).
+- HALLAZGO: el enunciado pide el mensaje "THANK YOU FOR YOUR ORDER", pero el
+  sitio muestra "Thank you for your order!" (minusculas/titulo y con signo de
+  exclamacion). La primera ejecucion con comparacion exacta (ignorando solo
+  mayusculas) fallo por el "!". La validacion final comprueba que el mensaje
+  CONTENGA el texto esperado sin distinguir mayusculas, que es el criterio
+  funcional correcto: el pedido se confirma con ese mensaje.
+
+3. BUENAS PRACTICAS APLICADAS
+-----------------------------
+- Esperas explicitas de Serenity (WaitUntil) en lugar de sleeps fijos.
+- Selectores estables (ids y clases del sitio).
+- URL y credenciales en serenity.conf por entorno (no en el .feature ni en el
+  codigo), sobreescribibles con variables de entorno.
+- Reporte generado siempre (testFailureIgnore + goal "check"): el reporte existe
+  aunque falle un escenario y el build termina en error si hubo fallos.
+- Modo headless disponible para integracion continua (-Denvironment=headless).
+- Chrome configurado sin el aviso de contrasenas de Google, que bloquea los
+  clics de las pruebas automatizadas.
+- Versiones de Cucumber y JUnit Platform alineadas con las que trae Serenity.
+
+4. RESULTADOS DE LA EJECUCION
+-----------------------------
+Corrida final: mvn clean verify (Chrome 157, Java 21, Maven 3.10.1, Windows 11)
+  - Escenarios ejecutados / exitosos / fallidos: 3 / 3 / 0
+  - Duracion de los escenarios: ~10 s (2 productos), ~7 s (1 y 3 productos);
+    build completo con reporte: ~48 s.
+  - Reproducibilidad verificada: dos corridas con -Dseed=12345 eligieron los
+    mismos productos y el mismo comprador.
+  - Hallazgos o defectos observados:
+    * Defecto del sitio de redondeo del "Item total" (ver seccion 2); depende
+      de los productos elegidos, por eso no aparece en todas las corridas.
+    * Mensaje de confirmacion distinto al del enunciado (ver seccion 2).
+    * Problemas de la suite corregidos durante el trabajo:
+        - El reporter de Serenity no estaba registrado en Cucumber: los
+          escenarios no quedaban en el reporte, sin capturas, y dos de ellos
+          aparecian como aprobados en 0.1 s sin ejecutarse (falso verde).
+        - Versiones de Cucumber (7.20 vs 7.31) y JUnit Platform desalineadas.
+        - Las preferencias de Chrome se declaraban con un formato que Serenity
+          ignora; el aviso de contrasenas bloqueaba los clics y el carrito
+          quedaba en 0.
+
+5. LIMITACIONES Y MEJORAS FUTURAS
+---------------------------------
+- Solo se prueba el usuario standard_user. Los demas usuarios de SauceDemo
+  (locked_out_user, problem_user, performance_glitch_user) permitirian cubrir
+  escenarios negativos y de rendimiento.
+- Faltan casos negativos del checkout (campos vacios, mensajes de error).
+- Se podria ejecutar en paralelo y en varios navegadores (Firefox, Edge).
+- Integrar con un pipeline de CI (GitHub Actions) y publicar el reporte.
